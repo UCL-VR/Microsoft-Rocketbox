@@ -3,6 +3,15 @@ using UnityEditor;
 
 public class FixRocketboxMaxImport : AssetPostprocessor
 {
+    void OnPreprocessModel()
+    {
+        if (assetPath.Contains("Avatars"))
+        {
+            ModelImporter modelImporter = assetImporter as ModelImporter;
+            modelImporter.materialImportMode = ModelImporterMaterialImportMode.ImportStandard;
+        }
+    }
+
     bool usingMixamoAnimations = true; 
     void OnPostprocessMaterial(Material material)
     {
