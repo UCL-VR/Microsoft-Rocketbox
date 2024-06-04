@@ -691,9 +691,13 @@ PrefabInstance:
       value: -22.5
       objectReference: {fileID: 0}
     - target: {fileID: 1082635309853141966, guid: 73369a530bd8253469d623a3ea6dcff9, type: 3}
+      propertyPath: m_Enabled
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1082635309853141966, guid: 73369a530bd8253469d623a3ea6dcff9, type: 3}
       propertyPath: avatarPrefab
       value: 
-      objectReference: {fileID: 3965504156881202049, guid: ec8a727a056fe4a4a9f24ceea23d3cfe, type: 3}
+      objectReference: {fileID: 0}
     - target: {fileID: 1082635309853141966, guid: 73369a530bd8253469d623a3ea6dcff9, type: 3}
       propertyPath: avatarCatalogue
       value: 

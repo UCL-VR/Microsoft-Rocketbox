@@ -31,7 +31,8 @@ public class ThreePointRig : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        
+        var avatarManager = FindAnyObjectByType<AvatarManager>();
+        avatar.SetHints(avatarManager.hints);
     }
 
     // Update is called once per frame
