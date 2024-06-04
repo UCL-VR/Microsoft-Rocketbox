@@ -6,7 +6,7 @@ using UnityEditor;
 namespace Ubiq.Avatars.Rocketbox
 {
     [CustomEditor(typeof(RocketboxAvatar))]
-    public class RocketboxAvatarEditor : Editor
+    public class RocketboxAvatarEditor : UnityEditor.Editor
     {
         public override void OnInspectorGUI()
         {
