@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using Ubiq.Avatars;
 
-public class ThreePointRig : MonoBehaviour
+public class ThreePointStandaloneRig : MonoBehaviour
 {
     private Ubiq.Avatars.Avatar avatar;
 
