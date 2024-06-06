@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "com.jlpm.motionmatching": "https://github.com/JLPM22/MotionMatching.git?path=/com.jlpm.motionmatching",
     "com.ucl.ubiq": "https://github.com/UCL-VR/ubiq.git#upm",
     "com.unity.collab-proxy": "2.2.0",
     "com.unity.feature.development": "1.0.1",

@@ -12,7 +12,7 @@ public class FixRocketboxMaxImport : AssetPostprocessor
         }
     }
 
-    bool usingMixamoAnimations = true; 
+    bool usingMixamoAnimations = true;
     void OnPostprocessMaterial(Material material)
     {
         // This fixes two problems with importing 3DSMax materials. The first is that the Max materials
@@ -34,7 +34,7 @@ public class FixRocketboxMaxImport : AssetPostprocessor
             !gameObject.name.ToLower().Contains("hipoly"))
             gameObject.SetActive(false);
     }
-    
+
     void OnPreprocessTexture()
     {
         // This function changes textures that are labelled with "normal" in their title to be loaded as 
@@ -58,7 +58,8 @@ public class FixRocketboxMaxImport : AssetPostprocessor
         Transform LClavicle = spine2.Find("Bip01 Neck").Find("Bip01 L Clavicle");
 
 
-        if(!usingMixamoAnimations){
+        if (!usingMixamoAnimations)
+        {
             pelvis.Find("Bip01 Spine").Find("Bip01 L Thigh").parent = pelvis;
             pelvis.Find("Bip01 Spine").Find("Bip01 R Thigh").parent = pelvis;
             LClavicle.parent = spine2;
@@ -74,7 +75,7 @@ public class FixRocketboxMaxImport : AssetPostprocessor
 
         var importer = (ModelImporter)assetImporter;
         //If you need a humanoid avatar, change it here
-        importer.animationType = ModelImporterAnimationType.Generic;
+        importer.animationType = ModelImporterAnimationType.Human;
     }
     private void RenameBip(GameObject currentBone)
     {
