@@ -306,7 +306,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   CharacterController: {fileID: 1447897467}
   MMData: {fileID: 11400000, guid: a3adc94482efd8f47894c74d70aa0da0, type: 2}
-  LockFPS: 1
+  LockFPS: 0
   SearchTime: 0.16666667
   UseBVHSearch: 1
   Inertialize: 1
@@ -544,7 +544,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6acccd80495f8b64ba316c971c82318f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  OnlyHMD: 1
+  OnlyHMD: 0
   HeadTracker: {fileID: 938426602}
   LeftTracker: {fileID: 1595900497}
   RightTracker: {fileID: 1885891257}
