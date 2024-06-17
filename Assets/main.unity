@@ -545,6 +545,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   OnlyHMD: 0
+  SmoothingHalfLife: 0.05
   HeadTracker: {fileID: 938426602}
   LeftTracker: {fileID: 1595900497}
   RightTracker: {fileID: 1885891257}
