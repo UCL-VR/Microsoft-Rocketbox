@@ -142,8 +142,8 @@ namespace UBIK
             // Translate Spine
             float3 hipsTargetRight = math.mul(hipsTarget.Rotation, math.right());
             float3 hipsTargetForward = math.mul(hipsTarget.Rotation, math.forward());
-            CCD.Solve(headTargetPos, headTarget.Position, SpineChain, SpineWeights, hipsTargetRight, SpineLength, minDegrees: -15.0f, maxDegrees: 15.0f);
-            CCD.Solve(headTargetPos, headTarget.Position, SpineChain, SpineWeights, hipsTargetForward, SpineLength, minDegrees: -8.0f, maxDegrees: 8.0f);
+            CCD.Solve(headTargetPos, headTarget.Position, 0.0f, SpineChain, SpineWeights, hipsTargetRight, SpineLength, minDegrees: -15.0f, maxDegrees: 15.0f);
+            CCD.Solve(headTargetPos, headTarget.Position, 0.0f, SpineChain, SpineWeights, hipsTargetForward, SpineLength, minDegrees: -8.0f, maxDegrees: 8.0f);
             // Rotate Head (force always look at the target head)
             Head.rotation = math.mul(headTarget.Rotation, InitHead);
         }
@@ -164,8 +164,8 @@ namespace UBIK
             // Rotate Spine with the Head
             // RotationChainIK.Solve(hipsTarget.Rotation, headTarget.Rotation, SpineChain, InitSpineChain, false, true);
             // Translate Spine
-            CCD.Solve(targetPos, headTarget.Position, SpineChain, SpineWeights, hipsTargetRight, SpineLength, minDegrees: -15.0f, maxDegrees: 15.0f);
-            CCD.Solve(targetPos, headTarget.Position, SpineChain, SpineWeights, hipsTargetForward, SpineLength, minDegrees: -8.0f, maxDegrees: 8.0f);
+            CCD.Solve(targetPos, headTarget.Position, (leftFactor + rightFactor) / (maxPercentageHeadToArmLength * 2), SpineChain, SpineWeights, hipsTargetRight, SpineLength, minDegrees: -15.0f, maxDegrees: 15.0f);
+            CCD.Solve(targetPos, headTarget.Position, (leftFactor + rightFactor) / (maxPercentageHeadToArmLength * 2), SpineChain, SpineWeights, hipsTargetForward, SpineLength, minDegrees: -8.0f, maxDegrees: 8.0f);
             // Rotate Head (force always look at the target head)
             Head.rotation = math.mul(headTarget.Rotation, InitHead);
         }
