@@ -20,6 +20,9 @@ namespace Ubiq.MotionMatching
         public LegPose LeftPose;
         public LegPose RightPose;
 
+        private Quaternion HipsToLocal => Quaternion.Euler(0, 180, 0);
+        private Quaternion LocalToHips => Quaternion.Inverse(HipsToLocal);
+
         private void Awake()
         {
             controller = GetComponent<MotionMatchingController>();
@@ -32,7 +35,6 @@ namespace Ubiq.MotionMatching
 
             if (controller)
             {
-
                 var data = controller.MMData;
                 var animationdata = data.AnimationDataTPose;
                 var animation = animationdata.GetAnimation();
@@ -88,12 +90,12 @@ namespace Ubiq.MotionMatching
         /// </summary>
         public Vector3 InverseTransformPoint(Vector3 world)
         {
-            return Quaternion.Euler(0,180,0) * hips.InverseTransformPoint(world);
+            return LocalToHips * hips.InverseTransformPoint(world);
         }
 
         public Vector3 TransformPoint(Vector3 local)
         {
-            return  hips.TransformPoint(Quaternion.Inverse(Quaternion.Euler(0, 180, 0)) * local);
+            return  hips.TransformPoint(HipsToLocal * local);
         }
 
         void GetAnklePose(Leg leg, ref PolarCoordinate parms)

@@ -14,10 +14,13 @@ namespace Ubiq.MotionMatching
 
         private Animator animator;
 
-        public Transform hips;
-
+        private Transform hips;
         private Leg left;
         private Leg right;
+
+        private Quaternion HipsToLocal => Quaternion.Euler(-90, 0, 90);
+        private Quaternion LocalToHips => Quaternion.Inverse(HipsToLocal);
+        private Quaternion LegToWorld => Quaternion.Euler(0, 90, 0);
 
         // Start is called before the first frame update
         void Start()
@@ -27,14 +30,14 @@ namespace Ubiq.MotionMatching
 
         public Vector3 InverseTransformPoint(Vector3 world)
         {
-            return hips.InverseTransformPoint(world);
+            return LocalToHips * hips.InverseTransformPoint(world);
         }
 
         void InitialiseBindPose()
         {
             var skm = GetComponentInChildren<SkinnedMeshRenderer>();
             animator = GetComponent<Animator>();
-           // hips = animator.GetBoneTransform(HumanBodyBones.Hips);
+            hips = animator.GetBoneTransform(HumanBodyBones.Hips);
 
             left = new Leg(
                 this,
@@ -51,11 +54,6 @@ namespace Ubiq.MotionMatching
                 animator.GetBoneTransform(HumanBodyBones.RightFoot),
                 animator.GetBoneTransform(HumanBodyBones.RightToes)
             );
-        }
-
-        Vector3 ToUnity(Vector3 v) // For RocketBox
-        {
-            return new Vector3(-v.z, -v.x, v.y);
         }
 
         // Update is called once per frame
@@ -106,7 +104,7 @@ namespace Ubiq.MotionMatching
 
             // This version applies it to the pivot.
 
-            ApplyRotation(Quaternion.LookRotation(knee, up2), leg.pivot, Quaternion.Euler(0, 90, 0));
+            ApplyRotation(Quaternion.LookRotation(knee, up2), leg.pivot, LegToWorld);
 
             // Next, update the knee rotation. Get the position of the ankle relative to the knee.
 
@@ -123,7 +121,7 @@ namespace Ubiq.MotionMatching
             var kneeAngle = Mathf.Acos(Vector3.Dot(knee.normalized, ak.normalized));
             var kneeUp = Quaternion.AngleAxis(kneeAngle * Mathf.Rad2Deg, kneeHingeAxis) * up2;
 
-            ApplyRotation(Quaternion.LookRotation(ak, kneeUp), leg.knee, Quaternion.Euler(0, 90, 0));
+            ApplyRotation(Quaternion.LookRotation(ak, kneeUp), leg.knee, LegToWorld);
         }
 
         /// <summary>
@@ -131,11 +129,14 @@ namespace Ubiq.MotionMatching
         /// space, considering any rotational offsets that should be applied
         /// due to the rigging.
         /// </summary>
-        private void ApplyRotation(Quaternion rotation, Transform bone, Quaternion hipsToRig)
+        private void ApplyRotation(Quaternion rotation, Transform bone, Quaternion hipsToRigWorld)
         {
             // Apply any corrective rotation as per the original rig - this is
             // done in hip space.
-            rotation = rotation * hipsToRig;
+            rotation = rotation * hipsToRigWorld;
+
+            // Counteract the rotation that will be applied by the hips
+            rotation = HipsToLocal * rotation;
 
             // Apply the hips rotation to get in world space
             rotation = hips.rotation * rotation;
@@ -237,11 +238,6 @@ namespace Ubiq.MotionMatching
             return circle;
         }
 
-        private void DebugDraw(Vector3 start, Vector3 end, Color color)
-        {
-            Debug.DrawLine(hips.TransformPoint(start), hips.TransformPoint(end), color);
-        }
-
         private void OnDrawGizmos()
         {
             Gizmos.color = Color.yellow;
@@ -251,7 +247,9 @@ namespace Ubiq.MotionMatching
                 InitialiseBindPose();
             }
 
-            Gizmos.matrix = hips.localToWorldMatrix;
+            Gizmos.matrix = hips.localToWorldMatrix * Matrix4x4.Rotate(HipsToLocal);
+            
+            //Gizmos.matrix = Matrix4x4.TRS(hips.position, Quaternion.identity, Vector3.one);
 
             var ankle = GetAnklePosition(right, RightPose.ankle);
 
