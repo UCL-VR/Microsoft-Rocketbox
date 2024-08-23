@@ -13,7 +13,6 @@ namespace UBIK
         private quaternion[] InitSpineChain;
         private Transform[] SpineChain;
         private float[] SpineWeights;
-        private float SpineLength;
         private quaternion[] InitLeftArmChain;
         private Transform[] LeftArmChain;
         private quaternion[] InitRightArmChain;
@@ -22,12 +21,22 @@ namespace UBIK
         private bool EnabledLeftArmIK;
         private bool EnabledRightArmIK;
 
+        private float SpineLength;
+        private float NeckHeadLength;
+        private float LeftArmLength;
+        private float RightArmLength;
+        private float HeadToLeftArmLength;
+        private float HeadToRightArmLength;
+
         public void Init(Transform[] skeleton, quaternion[] initRotations)
         {
 
             InitRoot(skeleton, initRotations);
             InitSpine(skeleton, initRotations);
             InitArms(skeleton, initRotations);
+            const float percentageHeadToArmLength = 1.00f;
+            HeadToLeftArmLength = math.sqrt(NeckHeadLength * NeckHeadLength + LeftArmLength * LeftArmLength) * percentageHeadToArmLength;
+            HeadToRightArmLength = math.sqrt(NeckHeadLength * NeckHeadLength + RightArmLength * RightArmLength) * percentageHeadToArmLength;
         }
 
         public void Solve(Target headTarget,
@@ -52,7 +61,7 @@ namespace UBIK
             {
                 SolveRoot(hipsTarget);
             }
-            SolveSpine(hipsTarget, headTarget);
+            SolveSpine(hipsTarget, headTarget, leftHandTarget, rightHandTarget);
             SolveArms(hipsTarget, leftHandTarget, rightHandTarget);
         }
 
@@ -76,6 +85,7 @@ namespace UBIK
             Head = skeleton[headJoint];
             InitHead = initRotations[headJoint];
             const int initSpineChainJoint = 9;
+            const int upperChestChainJoint = 11;
             const int endSpineChainJoint = 13;
             List<Transform> spineChain = new List<Transform>();
             List<quaternion> initSpineChain = new List<quaternion>();
@@ -89,6 +99,10 @@ namespace UBIK
                     if (spineChain.Count > 1)
                     {
                         SpineLength += math.distance(spineChain[spineChain.Count - 2].position, spineChain[spineChain.Count - 1].position);
+                    }
+                    if (i > upperChestChainJoint)
+                    {
+                        NeckHeadLength += math.distance(skeleton[i - 1].position, skeleton[i].position);
                     }
                 }
             }
@@ -104,7 +118,8 @@ namespace UBIK
                 SpineWeights = new float[endSpineChainJoint - initSpineChainJoint + 1] { 1.0f, 0.2f, 0.1f, 0.05f, 0.0f };
             }
         }
-        private void SolveSpine(Target hipsTarget, Target headTarget)
+
+        private float3 CommonSolveSpine(Target hipsTarget, Target headTarget)
         {
             float3 headTargetPos = headTarget.Position;
             if (math.distance(SpineChain[0].transform.position, headTargetPos) < SpineLength)
@@ -116,15 +131,60 @@ namespace UBIK
             {
                 SpineChain[i].rotation = math.mul(hipsTarget.Rotation, InitSpineChain[i]);
             }
-            // Rotate Spine
+            return headTargetPos;
+        }
+
+        private void SolveSpine(Target hipsTarget, Target headTarget)
+        {
+            float3 headTargetPos = CommonSolveSpine(hipsTarget, headTarget);
+            // Rotate Spine with the Head
             //RotationChainIK.Solve(hipsTarget.Rotation, headTarget.Rotation, SpineChain, InitSpineChain, false, true);
             // Translate Spine
             float3 hipsTargetRight = math.mul(hipsTarget.Rotation, math.right());
             float3 hipsTargetForward = math.mul(hipsTarget.Rotation, math.forward());
-            CCD.Solve(headTargetPos, SpineChain, SpineWeights, hipsTargetRight);
-            CCD.Solve(headTargetPos, SpineChain, SpineWeights, hipsTargetForward);
+            CCD.Solve(headTargetPos, headTarget.Position, 0.0f, SpineChain, SpineWeights, hipsTargetRight, SpineLength, minDegrees: -15.0f, maxDegrees: 15.0f);
+            CCD.Solve(headTargetPos, headTarget.Position, 0.0f, SpineChain, SpineWeights, hipsTargetForward, SpineLength, minDegrees: -8.0f, maxDegrees: 8.0f);
             // Rotate Head (force always look at the target head)
             Head.rotation = math.mul(headTarget.Rotation, InitHead);
+        }
+
+        private void SolveSpine(Target hipsTarget, Target headTarget, Target leftHandTarget, Target rightHandTarget)
+        {
+            const float maxPercentageHeadToArmLength = 0.25f;
+            float3 headTargetPos = CommonSolveSpine(hipsTarget, headTarget);
+            float headToLeftHand = math.distance((float3)Head.position, leftHandTarget.Position);
+            float headToRightHand = math.distance((float3)Head.position, rightHandTarget.Position);
+            float leftFactor = math.clamp((headToLeftHand - HeadToLeftArmLength) / HeadToLeftArmLength, 0.0f, 1.0f) * maxPercentageHeadToArmLength;
+            float rightFactor = math.clamp((headToRightHand - HeadToRightArmLength) / HeadToRightArmLength, 0.0f, 1.0f) * maxPercentageHeadToArmLength;
+            float3 targetPos = headTargetPos * (1.0f - leftFactor - rightFactor) + leftHandTarget.Position * leftFactor + rightHandTarget.Position * rightFactor;
+            float3 hipsTargetRight = math.mul(hipsTarget.Rotation, math.right());
+            float3 hipsTargetUp = math.mul(hipsTarget.Rotation, math.up());
+            float3 hipsTargetForward = math.mul(hipsTarget.Rotation, math.forward());
+            RotateSpineToHands(hipsTarget, leftHandTarget.Position, rightHandTarget.Position, hipsTargetRight, hipsTargetUp, hipsTargetForward);
+            // Rotate Spine with the Head
+            // RotationChainIK.Solve(hipsTarget.Rotation, headTarget.Rotation, SpineChain, InitSpineChain, false, true);
+            // Translate Spine
+            CCD.Solve(targetPos, headTarget.Position, (leftFactor + rightFactor) / (maxPercentageHeadToArmLength * 2), SpineChain, SpineWeights, hipsTargetRight, SpineLength, minDegrees: -15.0f, maxDegrees: 15.0f);
+            CCD.Solve(targetPos, headTarget.Position, (leftFactor + rightFactor) / (maxPercentageHeadToArmLength * 2), SpineChain, SpineWeights, hipsTargetForward, SpineLength, minDegrees: -8.0f, maxDegrees: 8.0f);
+            // Rotate Head (force always look at the target head)
+            Head.rotation = math.mul(headTarget.Rotation, InitHead);
+        }
+
+        private void RotateSpineToHands(Target hipsTarget, float3 leftHandPos, float3 rightHandPos,
+                                        float3 hipsTargetRight, float3 hipsTargetUp, float3 hipsTargetForward)
+        {
+            const float maxRotDegrees = 120.0f;
+            Plane hipsPlaneZY = new Plane(hipsTargetRight, hipsTarget.Position);
+            float leftHandDist = hipsPlaneZY.GetDistanceToPoint(leftHandPos) + LeftArmLength * 0.3f;
+            float rightHandDist = -hipsPlaneZY.GetDistanceToPoint(rightHandPos) - RightArmLength * 0.3f;
+            float leftHandRot = math.clamp(leftHandDist / (LeftArmLength * 0.75f), 0.0f, 1.0f) * maxRotDegrees;
+            float rightHandRot = -(math.clamp(rightHandDist / (RightArmLength * 0.75f), 0.0f, 1.0f) * maxRotDegrees);
+            float3 forwardLeftHand = Vector3.ProjectOnPlane(leftHandPos - hipsTarget.Position, hipsTargetUp);
+            float3 forwardRightHand = Vector3.ProjectOnPlane(rightHandPos - hipsTarget.Position, hipsTargetUp);
+            float rot = leftHandRot * math.sign(math.dot(hipsTargetForward, forwardLeftHand)) +
+                        rightHandRot * math.sign(math.dot(hipsTargetForward, forwardRightHand));
+            quaternion targetRotation = math.mul(quaternion.AxisAngle(hipsTargetUp, math.radians(rot)), hipsTarget.Rotation);
+            RotationChainIK.Solve(hipsTarget.Rotation, targetRotation, SpineChain[2..], InitSpineChain[2..], false, true);
         }
 
         private void InitArms(Transform[] skeleton, quaternion[] initRotations)
@@ -142,6 +202,10 @@ namespace UBIK
                 {
                     leftArmChain.Add(skeleton[i]);
                     initLeftArmChain.Add(initRotations[i]);
+                    if (i > initLeftArmChainJoint)
+                    {
+                        LeftArmLength += math.distance(skeleton[i - 1].position, skeleton[i].position);
+                    }
                 }
             }
             //Debug.Assert(leftArmChain.Count >= 3, "Left arm chain must have at least 3 joints");
@@ -160,6 +224,10 @@ namespace UBIK
                 {
                     rightArmChain.Add(skeleton[i]);
                     initRightArmChain.Add(initRotations[i]);
+                    if (i > initRightArmChainJoint)
+                    {
+                        RightArmLength += math.distance(skeleton[i - 1].position, skeleton[i].position);
+                    }
                 }
             }
             //Debug.Assert(rightArmChain.Count >= 3, "Right arm chain must have at least 3 joints");
@@ -180,7 +248,6 @@ namespace UBIK
                 {
                     chain[i].rotation = math.mul(hipsTarget.Rotation, init[i]);
                 }
-                // TODO: dual trigonometric pass
                 // Solve Arm
                 float3 targetForward = math.mul(target.Rotation, math.forward());
                 float3 hipsTargetForward = math.mul(hipsTarget.Rotation, math.forward());

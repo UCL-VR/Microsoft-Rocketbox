@@ -1,5 +1,6 @@
 using MotionMatching;
 using Unity.Mathematics;
+using Unity.VisualScripting;
 using UnityEngine;
 
 namespace UBIK
@@ -7,6 +8,8 @@ namespace UBIK
     public class UpperBodyAvatar : MonoBehaviour
     {
         public bool OnlyHMD;
+        [Tooltip("Time in seconds to reach 50% of the target value provided by the IK.")]
+        [Range(0.0f, 1.0f)] public float SmoothingHalfLife = 0.1f;
 
         public Transform HeadTracker;
         public Transform LeftTracker;
@@ -23,6 +26,8 @@ namespace UBIK
         private UBIK UpperBodyIK;
         private quaternion ForwardLocalLHand;
         private quaternion ForwardLocalRHand;
+        private quaternion[] PreviousLocalRotations;
+        private float3[] JointVelocities;
 
         private void Awake()
         {
@@ -56,9 +61,27 @@ namespace UBIK
                 ForwardLocalLHand = getForwardUpHand(HumanBodyBones.LeftHand, HumanBodyBones.LeftIndexDistal, HumanBodyBones.LeftThumbProximal);
                 ForwardLocalRHand = getForwardUpHand(HumanBodyBones.RightHand, HumanBodyBones.RightIndexDistal, HumanBodyBones.RightThumbProximal);
             }
+            PreviousLocalRotations = new quaternion[Joints.Length];
+            JointVelocities = new float3[Joints.Length];
         }
 
-        private void Update()
+        private void OnEnable()
+        {
+            if (MMRenderer != null)
+            {
+                MMRenderer.OnSkeletonUpdated += AfterSkeletonUpdated;
+            }
+        }
+
+        private void OnDisable()
+        {
+            if (MMRenderer != null)
+            {
+                MMRenderer.OnSkeletonUpdated -= AfterSkeletonUpdated;
+            }
+        }
+
+        private void AfterSkeletonUpdated()
         {
             if (MMRenderer != null)
             {
@@ -78,6 +101,14 @@ namespace UBIK
             quaternion lhandRot = getWorldHandTarget(17, LeftTracker, ForwardLocalLHand);
             quaternion rhandRot = getWorldHandTarget(21, RightTracker, ForwardLocalRHand);
 
+            for (int i = 0; i < Joints.Length; ++i)
+            {
+                if (Joints[i].Transform != null)
+                {
+                    PreviousLocalRotations[i] = Joints[i].Transform.localRotation;
+                }
+            }
+
 
             UpperBodyIK.Solve(new UBIK.Target
             {
@@ -96,6 +127,17 @@ namespace UBIK
                 Position = RightTracker.position,
                 Rotation = rhandRot
             });
+
+            for (int i = 0; i < Joints.Length; ++i)
+            {
+                if (Joints[i].Transform != null)
+                {
+                    quaternion currentLocalRotation = PreviousLocalRotations[i];
+                    quaternion targetLocalRotation = Joints[i].Transform.localRotation;
+                    Spring.SimpleSpringDamperImplicit(ref currentLocalRotation, ref JointVelocities[i], targetLocalRotation, SmoothingHalfLife, Time.deltaTime);
+                    Joints[i].Transform.localRotation = currentLocalRotation;
+                }
+            }
         }
 
         public quaternion[] GetDefaultPose()
