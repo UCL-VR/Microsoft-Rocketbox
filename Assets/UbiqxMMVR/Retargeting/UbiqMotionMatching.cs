@@ -1,15 +1,8 @@
-using System.Collections;
-using System.Collections.Generic;
-using System.Runtime.InteropServices.WindowsRuntime;
-using Unity.VisualScripting;
-using Unity.XR.CoreUtils;
 using UnityEngine;
-using UnityEngine.InputSystem.Android.LowLevel;
 
 namespace Ubiq.MotionMatching
 {
-
-    public class UbiqMotionMatching : MonoBehaviour, ITransformSpace
+    public class UbiqMotionMatching : MonoBehaviour, IHipSpace
     {
         public bool UpdateRootTransform = true;
         public bool UpdateLegTransforms = true;
