@@ -12,6 +12,7 @@ namespace Ubiq.MotionMatching
     public class UbiqMotionMatching : MonoBehaviour
     {
         public bool UpdateRootTransform = true;
+        public bool UpdateLegTransforms = true;
 
         public LowerBodyParametrisation LowerBodyParameters;
 
@@ -68,7 +69,14 @@ namespace Ubiq.MotionMatching
                 transform.rotation = LowerBodyParameters.transform.rotation;
             }
 
+            if (UpdateLegTransforms)
+            {
+                LeftPose = LowerBodyParameters.LeftPose;
+                RightPose = LowerBodyParameters.RightPose;
+            }
+
             ApplyTransforms(right, RightPose);
+            ApplyTransforms(left, LeftPose);
         }
 
         void ApplyTransforms(Leg leg, LegPose pose)
@@ -189,7 +197,7 @@ namespace Ubiq.MotionMatching
         private Vector3 GetKneePosition(Leg leg, LegPose pose)
         {
             var s = GetKneePlane(leg, pose);
-            return s.o + Quaternion.AngleAxis(pose.knee, s.normal) * s.up;
+            return s.o + Quaternion.AngleAxis(-pose.knee, s.normal) * s.up;
         }
 
         private struct Circle
@@ -204,7 +212,7 @@ namespace Ubiq.MotionMatching
             return SphereSphereIntersection(leg.offset, ankle, leg.upperLength, leg.lowerLength);
         }
 
-        private Circle SphereSphereIntersection(Vector3 A, Vector3 B, float r, float R)
+        private Circle SphereSphereIntersection(Vector3 A, Vector3 B, float R, float r)
         {
             // This is the problem of a sphere sphere intersection, which we solve
             // as a distance along the vector b-a, and radius of a circle normal
