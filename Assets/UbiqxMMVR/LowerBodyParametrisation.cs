@@ -64,7 +64,7 @@ namespace Ubiq.MotionMatching
         public float length;
         public Vector3 offset; // From the avatar hips to the root of the leg
 
-        public Leg(Transform hips, Transform pivot, Transform knee, Transform ankle, Transform toes)
+        public Leg(ITransformSpace hips, Transform pivot, Transform knee, Transform ankle, Transform toes)
         {
             this.pivot = pivot;
             this.knee = knee;
@@ -77,7 +77,12 @@ namespace Ubiq.MotionMatching
         }
     }
 
-    public class LowerBodyParametrisation : MonoBehaviour
+    public interface ITransformSpace
+    {
+        Vector3 InverseTransformPoint(Vector3 position);    
+    }
+
+    public class LowerBodyParametrisation : MonoBehaviour, ITransformSpace
     {
         public float angleOffset = 0f;
         public float inclinationOffset = 0f;
@@ -131,7 +136,7 @@ namespace Ubiq.MotionMatching
             }
 
             left = new Leg(
-                hips,
+                this,
                 transforms["LeftHip"],
                 transforms["LeftKnee"],
                 transforms["LeftAnkle"],
@@ -139,7 +144,7 @@ namespace Ubiq.MotionMatching
             );
 
             right = new Leg(
-                hips,
+                this,
                 transforms["RightHip"],
                 transforms["RightKnee"],
                 transforms["RightAnkle"],
@@ -159,9 +164,23 @@ namespace Ubiq.MotionMatching
             GetKneePose(leg, ref pose);
         }
 
+        /// <summary>
+        /// Transforms from World Space into local Hip space, including any
+        /// corrective transforms.
+        /// </summary>
+        public Vector3 InverseTransformPoint(Vector3 world)
+        {
+            return Quaternion.Euler(0,180,0) * hips.InverseTransformPoint(world);
+        }
+
+        public Vector3 TransformPoint(Vector3 local)
+        {
+            return  hips.TransformPoint(Quaternion.Inverse(Quaternion.Euler(0, 180, 0)) * local);
+        }
+
         void GetAnklePose(Leg leg, ref PolarCoordinate parms)
         {
-            var p = hips.InverseTransformPoint(leg.ankle.position) - leg.offset;
+            var p = InverseTransformPoint(leg.ankle.position) - leg.offset;
 
             parms.radius = p.magnitude / leg.length;
 
@@ -181,7 +200,7 @@ namespace Ubiq.MotionMatching
             // Get the parameters for the knee in the same way as they'd be defined
             // when applying the transform at the other end.
 
-            var ankle = hips.InverseTransformPoint(leg.ankle.position) - leg.offset;
+            var ankle = InverseTransformPoint(leg.ankle.position) - leg.offset;
 
             // Get the cirlcle describing the possible positions of the knee
             var kp = SphereSphereIntersection(Vector3.zero, ankle, leg.upperLength, leg.lowerLength);
@@ -198,7 +217,7 @@ namespace Ubiq.MotionMatching
             forward = (p.ClosestPointOnPlane(o + forward) - o).normalized;
 
             // Get the knee position in the plane
-            var knee = (hips.InverseTransformPoint(leg.knee.position) - leg.offset - o);
+            var knee = InverseTransformPoint(leg.knee.position) - leg.offset - o;
 
             DebugDraw(o + leg.offset, o + leg.offset + knee, Color.red);
             DebugDraw(o + leg.offset, o + leg.offset + forward * knee.magnitude, Color.green);
@@ -256,7 +275,7 @@ namespace Ubiq.MotionMatching
 
         private void DebugDraw(Vector3 start, Vector3 end, Color color)
         {
-            Debug.DrawLine(hips.TransformPoint(start), hips.TransformPoint(end), color);
+            Debug.DrawLine(TransformPoint(start), TransformPoint(end), color);
         }
 
         private void OnDrawGizmos()

@@ -9,7 +9,7 @@ using UnityEngine.InputSystem.Android.LowLevel;
 namespace Ubiq.MotionMatching
 {
 
-    public class UbiqMotionMatching : MonoBehaviour
+    public class UbiqMotionMatching : MonoBehaviour, ITransformSpace
     {
         public bool UpdateRootTransform = true;
         public bool UpdateLegTransforms = true;
@@ -32,6 +32,11 @@ namespace Ubiq.MotionMatching
             InitialiseBindPose();
         }
 
+        public Vector3 InverseTransformPoint(Vector3 world)
+        {
+            return hips.InverseTransformPoint(world);
+        }
+
         void InitialiseBindPose()
         {
             var skm = GetComponentInChildren<SkinnedMeshRenderer>();
@@ -39,7 +44,7 @@ namespace Ubiq.MotionMatching
            // hips = animator.GetBoneTransform(HumanBodyBones.Hips);
 
             left = new Leg(
-                hips,
+                this,
                 animator.GetBoneTransform(HumanBodyBones.LeftUpperLeg),
                 animator.GetBoneTransform(HumanBodyBones.LeftLowerLeg),
                 animator.GetBoneTransform(HumanBodyBones.LeftFoot),
@@ -47,7 +52,7 @@ namespace Ubiq.MotionMatching
             );
 
             right = new Leg(
-                hips,
+                this,
                 animator.GetBoneTransform(HumanBodyBones.RightUpperLeg),
                 animator.GetBoneTransform(HumanBodyBones.RightLowerLeg),
                 animator.GetBoneTransform(HumanBodyBones.RightFoot),
