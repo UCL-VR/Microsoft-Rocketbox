@@ -24,6 +24,13 @@ namespace Ubiq.MotionMatching
         public float spread;
     }
 
+    public struct Circle
+    {
+        public Vector3 normal;
+        public float d;
+        public float radius;
+    }
+
     [Serializable]
     public struct LegPose
     {

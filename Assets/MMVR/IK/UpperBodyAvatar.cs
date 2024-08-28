@@ -81,7 +81,7 @@ namespace UBIK
             }
         }
 
-        private void AfterSkeletonUpdated()
+        public void AfterSkeletonUpdated()
         {
             if (MMRenderer != null)
             {

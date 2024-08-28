@@ -415,18 +415,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 811ef7d942f4ba74d9c1b99092430c7b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  angleOffset: 0
-  inclinationOffset: 0
-  bones:
-  - {fileID: 1426631451}
-  - {fileID: 1601149572}
-  - {fileID: 760200985}
-  - {fileID: 1391255550}
-  - {fileID: 683364903}
-  - {fileID: 1967186513}
-  - {fileID: 1030243983}
-  - {fileID: 1296493930}
-  - {fileID: 1558194375}
   LeftPose:
     ankle:
       position: 0
@@ -439,6 +427,8 @@ MonoBehaviour:
       radius: 0
       spread: 0
     knee: 0
+  angleOffset: 0
+  inclinationOffset: 0
 --- !u!4 &382520562 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 6996128084178340085, guid: 13b8f19885c1e59499e704a2067de935, type: 3}
@@ -582,6 +572,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: b68d534fcf02a2d4f80d91fa2c5b42de, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1702428170}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: b68d534fcf02a2d4f80d91fa2c5b42de, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1702428172}
   m_SourcePrefab: {fileID: 100100000, guid: b68d534fcf02a2d4f80d91fa2c5b42de, type: 3}
 --- !u!4 &545952525 stripped
 Transform:
@@ -602,7 +595,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1722081382403054271, guid: 13b8f19885c1e59499e704a2067de935, type: 3}
       propertyPath: m_IsActive
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 2066553305080971269, guid: 13b8f19885c1e59499e704a2067de935, type: 3}
       propertyPath: m_LocalPosition.x
@@ -749,9 +742,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 811ef7d942f4ba74d9c1b99092430c7b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  angleOffset: 0
-  inclinationOffset: -28
-  bones: []
   LeftPose:
     ankle:
       position: 0
@@ -764,6 +754,8 @@ MonoBehaviour:
       radius: 0
       spread: 0
     knee: 0
+  angleOffset: 0
+  inclinationOffset: -28
 --- !u!1 &683364902
 GameObject:
   m_ObjectHideFlags: 0
@@ -944,7 +936,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 760200984}
   serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: -0.46890128, z: -0.00004136}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
@@ -1053,12 +1045,12 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 907322495}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 6acccd80495f8b64ba316c971c82318f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  OnlyHMD: 1
+  OnlyHMD: 0
   SmoothingHalfLife: 0.1
   HeadTracker: {fileID: 938426602}
   LeftTracker: {fileID: 1595900497}
@@ -1231,13 +1223,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ef72adde078ccb443965311162e2cfc1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  UpdateRootTransform: 0
+  UpdateRootTransform: 1
   UpdateLegTransforms: 1
-  LowerBodyParameters: {fileID: 362099013}
+  LowerBodySource: {fileID: 640957025}
+  Calibration: {fileID: 11400000, guid: c73620e78b50f2c45937137d8748075c, type: 2}
   LeftPose:
     ankle:
       position: 0
-      radius: 0
+      radius: 1
       spread: 0
     knee: 0
   RightPose:
@@ -1246,6 +1239,9 @@ MonoBehaviour:
       radius: 1
       spread: 0
     knee: 0
+  DrawLegs: 0
+  DrawKnee: 0
+  UpdateCalibration: 0
 --- !u!1 &938426601
 GameObject:
   m_ObjectHideFlags: 0
@@ -1812,6 +1808,37 @@ Animator:
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
   m_WriteDefaultValuesOnDisable: 0
+--- !u!114 &1702428172
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1702428168}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ef72adde078ccb443965311162e2cfc1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  UpdateRootTransform: 1
+  UpdateLegTransforms: 1
+  LowerBodySource: {fileID: 640957025}
+  Calibration: {fileID: 11400000, guid: c73620e78b50f2c45937137d8748075c, type: 2}
+  LeftPose:
+    ankle:
+      position: 0
+      radius: 0
+      spread: 0
+    knee: 0
+  RightPose:
+    ankle:
+      position: 0
+      radius: 0
+      spread: 0
+    knee: 0
+  DrawLegs: 0
+  DrawKnee: 0
+  UpdateCalibration: 0
 --- !u!1 &1741618412
 GameObject:
   m_ObjectHideFlags: 0

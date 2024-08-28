@@ -4,35 +4,38 @@ using UnityEngine;
 
 namespace Ubiq.MotionMatching
 {
-    public class LowerBodyParametrisation : MonoBehaviour, IHipSpace
+    /// <summary>
+    /// A LowerBody source designed for use with the MMVR Humanoid Rig.
+    /// </summary>
+    public class MMVRLowerBody : LowerBody, IHipSpace
     {
+        [Header("Calirbation")]
         public float angleOffset = 0f;
         public float inclinationOffset = 0f;
-
-        public List<Transform> bones = new List<Transform>();
-
-        private MotionMatchingController controller;
 
         private Transform hips;
         private Leg left;
         private Leg right;
 
-        public LegPose LeftPose;
-        public LegPose RightPose;
+        // These calibration properties are fixed for the MMVR rig. To adapt
+        // for other rigs, create a new subclass of LowerBody based on this
+        // implementation.
 
         private Quaternion HipsToLocal => Quaternion.Euler(0, 180, 0);
         private Quaternion LocalToHips => Quaternion.Inverse(HipsToLocal);
 
-        private void Awake()
-        {
-            controller = GetComponent<MotionMatchingController>();
-        }
-
-        // Start is called before the first frame update
-        void Start()
+        private void Start()
         {
             var transforms = new Dictionary<string, Transform>();
 
+            // This Component works best with an MMVR Motion Matching Controller,
+            // however it can also work with a design-time rig of the same
+            // hierarchy. 
+
+            // It is not meant to work with general purpose rigs however - for that
+            // create a new subclass.
+
+            var controller = GetComponent<MotionMatchingController>();
             if (controller)
             {
                 var data = controller.MMData;
@@ -47,9 +50,9 @@ namespace Ubiq.MotionMatching
             }
             else
             {
-                foreach (var item in bones)
+                foreach (var bone in GetComponentsInChildren<Transform>())
                 {
-                    transforms.Add(item.name, item);
+                    transforms.Add(bone.name, bone);
                 }
             }
 
@@ -72,7 +75,7 @@ namespace Ubiq.MotionMatching
             );
         }
 
-        void Update()
+        private void Update()
         {
             UpdatePose(left, ref LeftPose);
             UpdatePose(right, ref RightPose);
@@ -85,7 +88,7 @@ namespace Ubiq.MotionMatching
         }
 
         /// <summary>
-        /// Transforms from World Space into local Hip space, including any
+        /// Transforms from World Space into Local (Hip) Space, including any
         /// corrective transforms.
         /// </summary>
         public Vector3 InverseTransformPoint(Vector3 world)
@@ -93,12 +96,17 @@ namespace Ubiq.MotionMatching
             return LocalToHips * hips.InverseTransformPoint(world);
         }
 
-        public Vector3 TransformPoint(Vector3 local)
+        private Vector3 InverseTransformDirection(Vector3 world)
+        {
+            return -(LocalToHips * hips.InverseTransformDirection(world));
+        }
+
+        private Vector3 TransformPoint(Vector3 local)
         {
             return  hips.TransformPoint(HipsToLocal * local);
         }
 
-        void GetAnklePose(Leg leg, ref PolarCoordinate parms)
+        private void GetAnklePose(Leg leg, ref PolarCoordinate parms)
         {
             var p = InverseTransformPoint(leg.ankle.position) - leg.offset;
 
@@ -115,15 +123,18 @@ namespace Ubiq.MotionMatching
             parms.position += angleOffset;
         }
 
-        void GetKneePose(Leg leg, ref LegPose pose)
+        private void GetKneePose(Leg leg, ref LegPose pose)
         {
-            // Get the parameters for the knee in the same way as they'd be defined
-            // when applying the transform at the other end.
+            // Get the parameter for the knee. This can be acquired directly from
+            // the transform of the knee bone.
+
+            // Get the reference vector in the same way it would be recovered
+            // in the destination component.
 
             var ankle = InverseTransformPoint(leg.ankle.position) - leg.offset;
 
             // Get the cirlcle describing the possible positions of the knee
-            var kp = SphereSphereIntersection(Vector3.zero, ankle, leg.upperLength, leg.lowerLength);
+            var kp = Utils.SphereSphereIntersection(Vector3.zero, ankle, leg.upperLength, leg.lowerLength);
 
             // knee plane origin & plane
             var o = (kp.normal * kp.d);
@@ -136,71 +147,23 @@ namespace Ubiq.MotionMatching
             // Get the reference vector in the plane
             forward = (p.ClosestPointOnPlane(o + forward) - o).normalized;
 
-            // Get the knee position in the plane
-            var knee = InverseTransformPoint(leg.knee.position) - leg.offset - o;
+            // Get the knee forward in the plane. We use the orientation of the
+            // transform here to ensure robustness to noise in the position that
+            // is expected from real motion capture, when the leg is fully
+            // extended.
 
-            DebugDraw(o + leg.offset, o + leg.offset + knee, Color.red);
-            DebugDraw(o + leg.offset, o + leg.offset + forward * knee.magnitude, Color.green);
+            var knee = (p.ClosestPointOnPlane(o + InverseTransformDirection(leg.knee.forward)) - o).normalized;
 
-            pose.knee = 0;
-
-            if (knee.magnitude > 0.001f)
+            var angle = Vector3.Dot(forward, knee.normalized);
+            if (angle < 1 - Mathf.Epsilon) // Acos has a limited input range
             {
-                var angle = Vector3.Dot(forward, knee.normalized);
-                if (angle < 1 - Mathf.Epsilon)
-                {
-                    pose.knee = Mathf.Acos(angle) * Mathf.Rad2Deg * Mathf.Sign(Vector3.Dot(Vector3.Cross(forward, knee.normalized), -kp.normal));
-                }
+                pose.knee = Mathf.Acos(angle) * Mathf.Rad2Deg * Mathf.Sign(Vector3.Dot(Vector3.Cross(forward, knee.normalized), -kp.normal));
             }
         }
 
         private Quaternion GetOrientation(PolarCoordinate coord)
         {
             return Quaternion.AngleAxis(coord.position, Vector3.right) * Quaternion.AngleAxis(coord.spread, Vector3.forward);
-        }
-
-        private struct Circle
-        {
-            public Vector3 normal;
-            public float d;
-            public float radius;
-        }
-
-        private Circle SphereSphereIntersection(Vector3 A, Vector3 B, float R, float r)
-        {
-            // This is the problem of a sphere sphere intersection, which we solve
-            // as a distance along the vector b-a, and radius of a circle normal
-            // to the vector at that point.
-
-            Circle circle;
-
-            var AB = B - A;
-            var d = AB.magnitude;
-            var x = ((d * d) - (r * r) + (R * R)) / (2 * d);
-
-            circle.normal = AB.normalized;
-            circle.d = x;
-
-            circle.radius = 0;
-
-            var b = 4 * d * d * R * R - Mathf.Pow(d * d - r * r + R * R, 2);
-            if (b > 0)
-            {
-                var a = (1 / (2 * d)) * Mathf.Sqrt(b);
-                circle.radius = a;
-            }
-
-            return circle;
-        }
-
-        private void DebugDraw(Vector3 start, Vector3 end, Color color)
-        {
-            Debug.DrawLine(TransformPoint(start), TransformPoint(end), color);
-        }
-
-        private void OnDrawGizmos()
-        {
-
         }
     }
 }
