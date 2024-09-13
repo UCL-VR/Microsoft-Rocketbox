@@ -10,26 +10,20 @@ namespace Ubiq.Avatars.Rocketbox
     /// </summary>
     public class RocketboxAvatar : MonoBehaviour
     {
-       // public RocketboxAvatarSettings settings;
-
         public Material opaqueMaterial;
         public Material fadeMaterial;
 
-        // Start is called before the first frame update
-        void Start()
+        public IEnumerator LoadFromUrlAsync(string url)
         {
-            //RocketboxHelper.ApplySettings(settings, this);
+            return RocketboxHelper.LoadFromUrlAsync(url, this);
         }
 
-        // Update is called once per frame
-        void Update()
+        /// <summary>
+        /// Called when a new Avatar has finished loading onto this instance
+        /// </summary>
+        public void AvatarLoaded()
         {
 
-        }
-
-        public void LoadFromUrl(string url)
-        {
-            StartCoroutine(RocketboxHelper.LoadFromUrlAsync(url, this));
         }
     }
 }

@@ -5,16 +5,13 @@ using UnityEngine;
 
 namespace Ubiq.Avatars.Rocketbox
 {
-    public class RocketboxMenus : MonoBehaviour
+    public class RocketboxMenus
     {
         [MenuItem("Assets/Ubiq/Create Rocketbox Config")]
         private static void CreateRocketboxConfigAction()
         {
             var prefab = Selection.activeGameObject;
-            var path = System.IO.Path.GetDirectoryName(AssetDatabase.GetAssetPath(prefab));
-            var config = RocketboxHelper.CreateSettingsObject(prefab);
-            AssetDatabase.CreateAsset(config, path + "/" + prefab.name + ".asset");
-            AssetImporter.GetAtPath(AssetDatabase.GetAssetPath(config)).SetAssetBundleNameAndVariant(prefab.name, "unity3d");
+            RocketboxEditor.CreateSettingsAsset(prefab);
         }
 
         [MenuItem("Assets/Ubiq/Create Rocketbox Config", true)]
@@ -26,7 +23,9 @@ namespace Ubiq.Avatars.Rocketbox
         [MenuItem("Assets/Ubiq/Build AssetBundles")]
         private static void BuildAssetBundles()
         {
-            BuildPipeline.BuildAssetBundles(Application.dataPath + "/" + "AssetBundles/", BuildAssetBundleOptions.None, BuildTarget.StandaloneWindows);
+            BuildPipeline.BuildAssetBundles(Application.dataPath + "/" + "AssetBundles/Win64/", BuildAssetBundleOptions.None, BuildTarget.StandaloneWindows);
+            BuildPipeline.BuildAssetBundles(Application.dataPath + "/" + "AssetBundles/Android/", BuildAssetBundleOptions.None, BuildTarget.Android);
+            BuildPipeline.BuildAssetBundles(Application.dataPath + "/" + "AssetBundles/WebGL/", BuildAssetBundleOptions.None, BuildTarget.WebGL);
         }
     }
 }
