@@ -16,7 +16,7 @@ public class AvatarListHelper : MonoBehaviour
         {
             item.onClick.AddListener(() =>
             {
-                rocketboxManager.LoadAvatarAsync(item.GetComponentInChildren<TMPro.TextMeshProUGUI>().text, avatar);
+                StartCoroutine(rocketboxManager.LoadAvatarAsync(item.GetComponentInChildren<TMPro.TextMeshProUGUI>().text, avatar));
             });
         }
     }

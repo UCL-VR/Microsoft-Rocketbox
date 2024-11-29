@@ -11,13 +11,22 @@ namespace Ubiq.Avatars.Rocketbox
         public RocketboxAvatar avatar;
         public Camera screenshotCamera;
 
+        // The maximum number of avatars to go through - this can be reduced
+        // to 2 or 3 so it doesn't go through the whole list, if this script
+        // should be run many times for debugging purposes.
+
+        public int NumAvatarsToCapture  = 1000;
+
+        // When an avatar is loaded, the bone transforms are reset for its
+        // skeleton. These arrays save the rotations of the poses we would
+        // like to preserve.
+
         public List<Transform> transforms = new List<Transform>();
 
         private Dictionary<Transform, Quaternion> rotations = new Dictionary<Transform, Quaternion>();
 
         private Texture2D screenshotTexture;
 
-        // Start is called before the first frame update
         void Start()
         {
             foreach (var transform in transforms)
@@ -27,9 +36,8 @@ namespace Ubiq.Avatars.Rocketbox
 
             // Set up functionality for taking screenshots.
 
-            screenshotTexture = new Texture2D(Camera.main.pixelWidth, Camera.main.pixelHeight, TextureFormat.ARGB32, false);
+            screenshotTexture = new Texture2D(screenshotCamera.pixelWidth, screenshotCamera.pixelHeight, TextureFormat.ARGB32, false);
             screenshotCamera.backgroundColor = Color.clear;
-            screenshotCamera.targetTexture = new RenderTexture(Camera.main.pixelWidth, Camera.main.pixelHeight, 32);
 
             StartCoroutine(AvatarTutorial());
         }
@@ -40,7 +48,7 @@ namespace Ubiq.Avatars.Rocketbox
 
             yield return manager.server.DownloadManifest(); // Once this is done, the manifest will have downloaded
 
-            for (int i = 0; i < 3; i++)
+            for (int i = 0; i < Mathf.Min(manager.server.manifest.Avatars.Count, NumAvatarsToCapture); i++)
             {
                 var name = manager.server.manifest.Avatars[i];
 
@@ -69,16 +77,16 @@ namespace Ubiq.Avatars.Rocketbox
             // We need to use this approach instead of Screenshot because that
             // won't write transparent even with background colour set to clear.
 
-            screenshotCamera.CopyFrom(Camera.main);
             screenshotCamera.Render();
 
+            var tmp = RenderTexture.active;
             RenderTexture.active = screenshotCamera.targetTexture;
 
             screenshotTexture.ReadPixels(new Rect(0, 0, screenshotTexture.width, screenshotTexture.height), 0, 0);
             var bytes = screenshotTexture.EncodeToPNG();
             System.IO.File.WriteAllBytes(filename, bytes);
 
-            RenderTexture.active = Camera.main.targetTexture;
+            RenderTexture.active = tmp;
         }
     }
 }

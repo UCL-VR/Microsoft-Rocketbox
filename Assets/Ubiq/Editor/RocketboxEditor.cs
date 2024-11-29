@@ -8,10 +8,11 @@ namespace Ubiq.Avatars.Rocketbox
 {
     public class RocketboxEditor : RocketboxHelper
     {
-        public static string buildPath = "/Build";
+        private static string buildPath = "/Build";
         public static string configsPath => buildPath + "/Configs";
         public static string configsSystemPath => Application.dataPath + configsPath;
         public static string configsAssetsPath => "Assets" + configsPath;
+        public static string buildSystemPath => Application.dataPath + buildPath + "/AssetBundles";
 
         public static void CreateSettingsAsset(GameObject prefab)
         {
@@ -79,7 +80,7 @@ namespace Ubiq.Avatars.Rocketbox
                 }
             }
             var json = JsonUtility.ToJson(manifest);
-            File.WriteAllText(Application.dataPath + buildPath + "/manifest.json", json);
+            File.WriteAllText(buildSystemPath + "/manifest.json", json);
         }
     }
 }

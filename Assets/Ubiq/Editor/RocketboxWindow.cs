@@ -161,7 +161,7 @@ namespace Ubiq.Avatars.Rocketbox
 
         private static void BuildBundles(BuildTarget target)
         {
-            var folder = Application.dataPath + "/Build" + "/AssetBundles"+ "/" + target.ToString() + "/";
+            var folder = RocketboxEditor.buildSystemPath + "/" + target.ToString() + "/";
             System.IO.Directory.CreateDirectory(folder);
             BuildPipeline.BuildAssetBundles(folder, BuildAssetBundleOptions.None, target);
         }
